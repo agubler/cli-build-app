@@ -5,11 +5,16 @@ import * as fs from 'fs';
 import * as rimraf from 'rimraf';
 import * as execa from 'execa';
 import * as os from 'os';
-const normalise = require('normalize-newline');
 
 const appRootDir = path.join(__dirname, '..', '..', '..', 'test-app');
 
 const platform = os.platform().startsWith('win') ? 'windows' : 'unix';
+
+function normalise(value: string) {
+	value = value.split('# sourceMappingURL')[0];
+	value = value.replace(/\r\n/g, '\n').replace(/\\r\\n/g, '\\n');
+	return value.replace(/main\.[a-z0-9]+\.bundle/, 'main.[HASH].bundle');
+}
 
 function assertOutput(mode: string) {
 	const fixtureManifest = require(path.join(appRootDir, 'fixtures', platform, mode, 'manifest'));
@@ -21,11 +26,8 @@ function assertOutput(mode: string) {
 		if (id !== 'runtime.js.map') {
 			const fixtureFilePath = path.join(appRootDir, 'fixtures', platform, mode, fixtureManifest[id]);
 			const outputFilePath = path.join(appRootDir, 'output', mode, outputManifest[id]);
-			let fixtureContents = fs.readFileSync(fixtureFilePath, 'utf8');
-			let outputContents = fs.readFileSync(outputFilePath, 'utf8');
-
-			fixtureContents = fixtureContents.split('//# sourceMappingURL')[0];
-			outputContents = outputContents.split('//# sourceMappingURL')[0];
+			const fixtureContents = fs.readFileSync(fixtureFilePath, 'utf8');
+			const outputContents = fs.readFileSync(outputFilePath, 'utf8');
 
 			assert.strictEqual(normalise(outputContents), normalise(fixtureContents), id);
 		}
