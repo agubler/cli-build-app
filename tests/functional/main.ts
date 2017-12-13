@@ -11,9 +11,11 @@ const appRootDir = path.join(__dirname, '..', '..', '..', 'test-app');
 const platform = os.platform().startsWith('win') ? 'windows' : 'unix';
 
 function normalise(value: string) {
-	value = value.split('# sourceMappingURL')[0];
-	value = value.replace(/\r\n/g, '\n').replace(/\\r\\n/g, '\\n');
-	return value.replace(/main\.[a-z0-9]+\.bundle/, 'main.[HASH].bundle');
+	return value
+		.split('# sourceMappingURL')[0]
+		.replace(/\r\n/g, '\n')
+		.replace(/\\r\\n/g, '\\n')
+		.replace(/main\.[a-z0-9]+\.bundle/, 'main.[HASH].bundle');
 }
 
 function assertOutput(mode: string) {
