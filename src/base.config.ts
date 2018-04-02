@@ -7,6 +7,7 @@ import I18nPlugin from '@dojo/webpack-contrib/i18n-plugin/I18nPlugin';
 import * as ExtractTextPlugin from 'extract-text-webpack-plugin';
 import { WebAppManifest, WebpackConfiguration } from './interfaces';
 import * as loaderUtils from 'loader-utils';
+import getFeatures from '@dojo/webpack-contrib/static-build-loader/getFeatures';
 
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const AutoRequireWebpackPlugin = require('auto-require-webpack-plugin');
@@ -85,6 +86,10 @@ All rights reserved
 
 export default function webpackConfigFactory(args: any): WebpackConfiguration {
 	const manifest: WebAppManifest = args.pwa && args.pwa.manifest;
+	const extensions = args.evergreen ? ['.ts', '.tsx', '.mjs', '.js'] : ['.ts', '.tsx', '.js'];
+	const userFeatures = args.features || {};
+	const features = args.evergreen ? { ...userFeatures, ...getFeatures('chrome') } : userFeatures;
+
 	const lazyModules = Object.keys(args.bundles || {}).reduce(
 		(lazy, key) => {
 			lazy.push(...args.bundles[key]);
@@ -102,6 +107,10 @@ export default function webpackConfigFactory(args: any): WebpackConfiguration {
 		tsLoaderOptions.getCustomTransformers = () => ({
 			before: [registryTransformer(basePath, lazyModules)]
 		});
+	}
+
+	if (args.evergreen) {
+		tsLoaderOptions.compilerOptions = { target: 'es6', module: 'esnext' };
 	}
 
 	const postCssModuleLoader = ExtractTextPlugin.extract({
@@ -177,7 +186,7 @@ export default function webpackConfigFactory(args: any): WebpackConfiguration {
 		},
 		resolve: {
 			modules: [basePath, path.join(basePath, 'node_modules')],
-			extensions: ['.ts', '.tsx', '.js']
+			extensions
 		},
 		devtool: 'source-map',
 		watchOptions: { ignored: /node_modules/ },
@@ -231,9 +240,9 @@ export default function webpackConfigFactory(args: any): WebpackConfiguration {
 					include: allPaths,
 					test: /\.ts(x)?$/,
 					use: removeEmpty([
-						args.features && {
+						features && {
 							loader: '@dojo/webpack-contrib/static-build-loader',
-							options: { features: args.features }
+							options: { features }
 						},
 						getUMDCompatLoader({ bundles: args.bundles }),
 						{
@@ -243,11 +252,22 @@ export default function webpackConfigFactory(args: any): WebpackConfiguration {
 					])
 				},
 				{
+					test: /\.mjs$/,
+					use: removeEmpty([
+						{
+							loader: '@dojo/webpack-contrib/static-build-loader',
+							options: {
+								features
+							}
+						}
+					])
+				},
+				{
 					test: /\.js(x)?$/,
 					use: removeEmpty([
-						args.features && {
+						features && {
 							loader: '@dojo/webpack-contrib/static-build-loader',
-							options: { features: args.features }
+							options: { features }
 						},
 						'umd-compat-loader'
 					])

@@ -182,6 +182,13 @@ const command: Command = {
 			type: 'boolean'
 		});
 
+		options('evergreen', {
+			describe: 'Build application with for evergreen environment',
+			alias: 'e',
+			type: 'boolean',
+			default: false
+		});
+
 		options('port', {
 			describe: 'used in conjunction with the serve option to specify the webserver port',
 			alias: 'p',
@@ -194,11 +201,11 @@ const command: Command = {
 		const rc = helper.configuration.get() || {};
 		let config: webpack.Configuration;
 		if (args.mode === 'dev') {
-			config = devConfigFactory(rc);
+			config = devConfigFactory({ ...rc, ...args });
 		} else if (args.mode === 'test') {
-			config = testConfigFactory(rc);
+			config = testConfigFactory({ ...rc, ...args });
 		} else {
-			config = distConfigFactory(rc);
+			config = distConfigFactory({ ...rc, ...args });
 		}
 
 		if (args.serve) {
