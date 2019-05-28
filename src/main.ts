@@ -151,7 +151,7 @@ function serve(config: webpack.Configuration, args: any): Promise<void> {
 					snippet:
 						"<script>window.DojoHasEnvironment = { staticFeatures: { 'build-serve': true } };</script>",
 					fn: (match: string, snippet: string) => {
-						return match + snippet;
+						return snippet + match;
 					}
 				}
 			]
